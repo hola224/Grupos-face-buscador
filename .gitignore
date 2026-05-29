@@ -1,0 +1,6 @@
+__pycache__/
+*.py[cod]
+
+facebook_groups.json
+facebook_groups.xlsx
+.~lock.*#
