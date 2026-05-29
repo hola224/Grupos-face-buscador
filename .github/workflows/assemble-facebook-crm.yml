@@ -22,8 +22,21 @@ jobs:
       - name: Assemble facebook_group_crm.py
         run: |
           set -euo pipefail
-          cat .upload_chunks/facebook_group_crm.py.gz.b64.part_* | tr -d '\n' | base64 -d | gzip -dc > facebook_group_crm.py
-          test "$(sha256sum facebook_group_crm.py | cut -d ' ' -f1)" = "96f6338abc6aee059f7159fa7295c857d14522fd03012074504202ff6f3f24df"
+          python3 - <<'PY'
+          import base64, gzip, hashlib
+          from pathlib import Path
+
+          payload = "".join(
+              Path(path).read_text(encoding="utf-8").strip()
+              for path in sorted(Path(".upload_chunks").glob("facebook_group_crm.py.gz.b64.part_*"))
+          )
+          # One uploaded chunk lost this character during transfer; keep the repair local to the temporary assembler.
+          payload = payload.replace("CaqmjY38kgD+", "CaqmjYQ38kgD+", 1)
+          source = gzip.decompress(base64.b64decode(payload))
+          digest = hashlib.sha256(source).hexdigest()
+          assert digest == "96f6338abc6aee059f7159fa7295c857d14522fd03012074504202ff6f3f24df", digest
+          Path("facebook_group_crm.py").write_bytes(source)
+          PY
       - name: Commit assembled file and remove temporary upload files
         run: |
           set -euo pipefail
