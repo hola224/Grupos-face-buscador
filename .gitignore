@@ -4,3 +4,11 @@ __pycache__/
 facebook_groups.json
 facebook_groups.xlsx
 .~lock.*#
+
+# Datos personales del planificador (usa los .example.* como plantilla)
+posting_config.json
+mensajes_servicios.txt
+plan_hoy.html
+plan_hoy.json
+plan_*.json
+plan_*.html

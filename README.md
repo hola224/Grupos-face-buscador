@@ -221,10 +221,131 @@ python3 facebook_group_crm.py clean-names
 
 Esto actualiza `facebook_groups.json` y regenera `facebook_groups.xlsx`.
 
+## Publicar tus servicios cada dia (planificador)
+
+Cuando ya tienes la base de grupos, `posting_planner.py` arma un plan diario de
+publicacion de tus servicios. Esta pensado para publicar de forma sostenible y
+**sin caer en spam**, y con una regla clave de seguridad:
+
+- **No inicia sesion en Facebook.** No guarda tu usuario, contrasena ni cookies.
+- **No publica solo.** Genera una pagina local con el enlace de cada grupo y el
+  mensaje listo para copiar; tu publicas manualmente en tu navegador donde ya
+  estas conectado. Asi tus credenciales nunca quedan expuestas.
+- **Ritmo poco agresivo.** Respeta un tope diario de grupos y un enfriamiento
+  por grupo (no repite el mismo grupo antes de X dias).
+- **Anti texto identico.** Rota entre varias variantes de tu mensaje y las
+  personaliza por grupo (`{grupo}`, `{ubicacion}`, `{categoria}`).
+
+### 1. Configuración inicial (una sola vez)
+
+```bash
+python3 posting_planner.py init
+```
+
+Esto crea dos archivos a partir de las plantillas `*.example.*`:
+
+- `mensajes_servicios.txt`: tus mensajes. Escribe **varias variantes** separadas
+  por una linea con `---`. Puedes usar `{grupo}`, `{ubicacion}` y `{categoria}`.
+- `posting_config.json`: ajustes del plan.
+
+```json
+{
+  "mensajes_file": "mensajes_servicios.txt",
+  "daily_limit": 6,
+  "cooldown_days": 12,
+  "min_priority": 0,
+  "min_members": 0,
+  "categorias": [],
+  "spread_categorias": true
+}
+```
+
+- `daily_limit`: cuantos grupos como maximo publicas por dia.
+- `cooldown_days`: dias que deben pasar antes de repetir un mismo grupo.
+- `min_priority` / `min_members`: filtros opcionales de calidad.
+- `categorias`: si la dejas vacia usa todas; si pones `["Autos"]` filtra.
+- `spread_categorias`: reparte el dia entre categorias para no publicar todo del
+  mismo rubro.
+
+Estos dos archivos quedan fuera de git (tienen tu contacto). Las plantillas
+`mensajes_servicios.example.txt` y `posting_config.example.json` si se versionan.
+
+### 2. Generar el plan del día
+
+```bash
+python3 posting_planner.py plan
+```
+
+Elige los grupos que tocan hoy (respetando enfriamiento y tope), asigna una
+variante a cada uno y genera:
+
+- `plan_hoy.html`: abrela en tu navegador. Cada tarjeta tiene un boton
+  **Abrir grupo**, un boton **Copiar mensaje** y una casilla para marcar cuando
+  ya publicaste.
+- `plan_hoy.json`: registro interno del plan.
+
+Puedes ajustar sobre la marcha:
+
+```bash
+python3 posting_planner.py plan --limit 4 --cooldown 15 --categoria "Autos"
+```
+
+### 3. Publicar
+
+Abre `plan_hoy.html`, y para cada grupo: **Abrir grupo → Copiar mensaje →**
+pega en Facebook, revisa, publica y marca la casilla.
+
+### 4. Registrar lo publicado
+
+Al terminar, avanza la rotacion (marca todos los del plan como publicados hoy):
+
+```bash
+python3 posting_planner.py done
+```
+
+O solo algunos, si no alcanzaste a publicar en todos:
+
+```bash
+python3 posting_planner.py done grp_0001 grp_0007
+```
+
+### Ver estado de la rotación
+
+```bash
+python3 posting_planner.py status
+```
+
+Muestra cuantos grupos hay elegibles hoy y cuales estan en enfriamiento.
+
+### Ejecutar todos los días
+
+El script solo **prepara** el plan; la publicacion siempre la haces tu (esa es
+la parte que protege tu cuenta y tus credenciales). Para tenerlo listo cada dia
+puedes automatizar solo la generacion del plan:
+
+- **Linux/Mac (cron):**
+
+  ```cron
+  0 10 * * * cd /ruta/a/Grupos-face-buscador && python3 posting_planner.py plan
+  ```
+
+- **Windows (Programador de tareas):** crea una tarea diaria que ejecute
+  `python posting_planner.py plan` en la carpeta del proyecto.
+
+Luego abres `plan_hoy.html`, publicas y corres `done`.
+
+### Buenas prácticas para no caer en spam
+
+- No subas el `daily_limit` a numeros altos ni bajes mucho el `cooldown_days`.
+- Manten varias variantes de mensaje reales y utiles, no solo publicidad.
+- Publica en horarios distintos y responde comentarios.
+- Respeta las reglas de cada grupo; algunos no permiten promociones.
+
 ## Archivos generados
 
 - `facebook_groups.json`: base interna editable, fuente principal de datos.
 - `facebook_groups.xlsx`: Excel generado para revisar, filtrar y ordenar.
+- `plan_hoy.html` / `plan_hoy.json`: plan de publicacion del dia (regenerables).
 
 Si editas el Excel manualmente, esos cambios no vuelven al JSON. Lo ideal es
 usar el script para agregar datos y usar el Excel como vista de trabajo.

@@ -1,0 +1,10 @@
+{
+  "mensajes_file": "mensajes_servicios.txt",
+  "mensajes": [],
+  "daily_limit": 6,
+  "cooldown_days": 12,
+  "min_priority": 0,
+  "min_members": 0,
+  "categorias": [],
+  "spread_categorias": true
+}
